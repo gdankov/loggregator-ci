@@ -91,12 +91,6 @@ module Fluent
     end
 
     def resolve_owner(namespace_name, resource_type, resource_name)
-      input_source_id = source_id(
-        namespace_name,
-        resource_type,
-        resource_name
-      )
-
       obj = case resource_type
             when 'Pod'
               @client.get_pod(resource_name, namespace_name)
@@ -116,18 +110,10 @@ module Fluent
               @client.get_cronjob(resource_name, namespace_name)
       end
 
-      return input_source_id if obj.nil?
-
-      if (resource_type == 'StatefulSet') && (get_annotations_app_name(obj) != '')
-        return source_id(
-          namespace_name,
-          resource_type,
-          get_annotations_app_name(obj)
-        )
-      end
+      return resource_name if obj.nil?
 
       ownerReferences = obj.fetch('metadata', {}).fetch('ownerReferences', [])
-      return input_source_id if ownerReferences.empty?
+      return resource_name if ownerReferences.empty?
 
       resolve_owner(
         namespace_name,

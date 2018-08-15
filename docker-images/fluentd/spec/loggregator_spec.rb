@@ -75,51 +75,7 @@ RSpec.describe 'Loggregator Fluentd' do
         }
       }
       record = f.filter(nil, nil, record)
-      expect(record['kubernetes']['owner']).to eq('test_namespace_name/replicaset/test_replicaset_name')
-    end
-
-    it 'uses statefulset annotation for the name if available' do
-      f = Fluent::SourceIDFilter.new
-      kclient = double('kubernetes client stub')
-      f.instance_variable_set(:@client, kclient)
-      f.instance_variable_set(:@cache, {})
-      expect(kclient).to receive(:get_pod).with(
-        'test_pod_name',
-        'test_namespace_name'
-      ) {
-        {
-          'metadata' => {
-            'ownerReferences' => [
-              {
-                'kind' => 'StatefulSet',
-                'name' => 'test_statefulset'
-              }
-            ]
-          }
-        }
-      }
-
-      expect(kclient).to receive(:get_statefulset).with(
-        'test_statefulset',
-        'test_namespace_name'
-      ) {
-          {
-            'metadata' => {
-              'annotations' => {
-                'application_name' => 'dora-fedora'
-              }
-            }
-          }
-        }
-
-      record = {
-        'kubernetes' => {
-          'pod_name' => 'test_pod_name',
-          'namespace_name' => 'test_namespace_name'
-        }
-      }
-      record = f.filter(nil, nil, record)
-      expect(record['kubernetes']['owner']).to eq('test_namespace_name/statefulset/dora-fedora')
+      expect(record['kubernetes']['owner']).to eq('test_replicaset_name')
     end
 
     it 'caches results' do
@@ -138,9 +94,9 @@ RSpec.describe 'Loggregator Fluentd' do
         }
       }
       record = f.filter(nil, nil, record)
-      expect(record['kubernetes']['owner']).to eq('test_namespace_name/pod/test_pod_name')
+      expect(record['kubernetes']['owner']).to eq('test_pod_name')
       record = f.filter(nil, nil, record)
-      expect(record['kubernetes']['owner']).to eq('test_namespace_name/pod/test_pod_name')
+      expect(record['kubernetes']['owner']).to eq('test_pod_name')
     end
   end
 end
