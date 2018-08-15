@@ -36,7 +36,9 @@ module Fluent
         env.log = log
         env.timestamp = (time.to_f * (10**9)).to_i
         env.source_id = record.fetch('kubernetes', {}).fetch('owner', '')
-        env.instance_id = record.fetch('kubernetes', {}).fetch('pod_id', '')
+
+        env.instance_id = get_instance_id(record)
+        env.tags['source_type'] = 'APP'
         env.tags['pod_name'] = record.fetch('kubernetes', {}).fetch('pod_name', '')
         env.tags['namespace'] = record.fetch('kubernetes', {}).fetch('namespace_name', '')
         env.tags['container'] = record.fetch('kubernetes', {}).fetch('container_name', '')
@@ -54,6 +56,30 @@ module Fluent
             raise e
           end
         end
+      end
+    end
+
+    private
+
+    def is_number?(string)
+      true if Float(string) rescue false
+    end
+
+    def has_instance_index?(pod_name)
+      split = pod_name.split('-')
+      !split.empty? && is_number?(split[-1])
+    end
+
+    def get_instance_index(pod_name)
+      pod_name.split('-')[-1]
+    end
+
+    def get_instance_id(record)
+      pod_name = record.fetch('kubernetes', {}).fetch('pod_name', '')
+      if has_instance_index?(pod_name)
+        get_instance_index(pod_name)
+      else
+        record.fetch('kubernetes', {}).fetch('pod_id', '')
       end
     end
   end
