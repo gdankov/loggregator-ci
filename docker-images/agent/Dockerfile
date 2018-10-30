@@ -14,9 +14,9 @@ RUN go build \
 
 FROM alpine:latest
 
-ENV AGENT_CERT_FILE="/srv/certs/agent.crt" \
-    AGENT_KEY_FILE="/srv/certs/agent.key" \
-    AGENT_CA_FILE="/srv/certs/ca.crt" \
+ENV AGENT_CERT_FILE="/srv/certs/loggregator-agent-cert" \
+    AGENT_KEY_FILE="/srv/certs/loggregator-agent-cert-key" \
+    AGENT_CA_FILE="/srv/certs/internal-ca-cert" \
     AGENT_PORT="3458" \
     AGENT_INCOMING_UDP_PORT="3457" \
     AGENT_PPROF_PORT="6060" \

@@ -28,12 +28,18 @@ module Fluent
       es.each do |time, record|
         batch = Loggregator::V2::EnvelopeBatch.new
         env = Loggregator::V2::Envelope.new
-        log = Loggregator::V2::Log.new
+        #log = Loggregator::V2::Log.new
+        gauge = Loggregator::V2::Gauge.new
+        g_value = Loggregator::V2::GaugeValue.new
+        g_value.unit = 'mb'
+        g_value.value = 69.69
+        #log.payload = record['log']
+        #log.type = :ERR if record['stream'] == 'stderr'
 
-        log.payload = record['log']
-        log.type = :ERR if record['stream'] == 'stderr'
+        #env.log = log
+        gauge.metrics['memory'] = g_value
 
-        env.log = log
+        env.gauge = gauge
         env.timestamp = (time.to_f * (10**9)).to_i
         env.source_id = record.fetch('kubernetes', {}).fetch('owner', '')
 
