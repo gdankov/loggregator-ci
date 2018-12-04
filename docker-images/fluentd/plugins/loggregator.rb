@@ -35,7 +35,8 @@ module Fluent
 
         env.log = log
         env.timestamp = (time.to_f * (10**9)).to_i
-        env.source_id = record.fetch('metadata', {}).fetch('annotations', {}).fetch('application_id', '')
+
+        env.source_id = record.fetch('kubernetes', {}).fetch('labels', {}).fetch('guid', '')
 
         env.instance_id = get_instance_id(record)
         env.tags['source_type'] = 'APP/PROC/WEB'
