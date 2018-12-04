@@ -35,10 +35,10 @@ module Fluent
 
         env.log = log
         env.timestamp = (time.to_f * (10**9)).to_i
-        env.source_id = record.fetch('kubernetes', {}).fetch('owner', '')
+        env.source_id = record.fetch('metadata', {}).fetch('annotations', {}).fetch('application_id', '')
 
         env.instance_id = get_instance_id(record)
-        env.tags['source_type'] = 'APP'
+        env.tags['source_type'] = 'APP/PROC/WEB'
         env.tags['pod_name'] = record.fetch('kubernetes', {}).fetch('pod_name', '')
         env.tags['namespace'] = record.fetch('kubernetes', {}).fetch('namespace_name', '')
         env.tags['container'] = record.fetch('kubernetes', {}).fetch('container_name', '')
