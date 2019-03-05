@@ -36,10 +36,18 @@ module Fluent
         env.log = log
         env.timestamp = (time.to_f * (10**9)).to_i
 
-        env.source_id = record.fetch('kubernetes', {}).fetch('labels', {}).fetch('guid', '')
+        k8s_labels = record.fetch('kubernetes', {}).fetch('labels', {})
+
+        env.source_id = k8s_labels.fetch('guid', '')
 
         env.instance_id = get_instance_id(record)
-        env.tags['source_type'] = 'APP/PROC/WEB'
+
+        # Use a default source type APP if there's no kubernetes label.
+        source_type = k8s_labels.fetch('source_type', 'APP')
+
+        source_type = source_type == 'APP' ? 'APP/PROC/WEB' : source_type
+        env.tags['source_type'] = source_type
+
         env.tags['pod_name'] = record.fetch('kubernetes', {}).fetch('pod_name', '')
         env.tags['namespace'] = record.fetch('kubernetes', {}).fetch('namespace_name', '')
         env.tags['container'] = record.fetch('kubernetes', {}).fetch('container_name', '')

@@ -15,7 +15,7 @@ RSpec.describe 'Loggregator Fluentd' do
       env.timestamp = (now.to_f * (10**9)).to_i
       env.source_id = 'test_owner'
       env.instance_id = 'test_pod_id'
-      env.tags['source_type'] = 'APP'
+      env.tags['source_type'] = 'APP/PROC/WEB'
       env.tags['namespace'] = 'test_namespace'
       env.tags['container'] = 'test_container'
       env.tags['cluster'] = 'test_host'
@@ -37,7 +37,10 @@ RSpec.describe 'Loggregator Fluentd' do
                       'pod_name' => 'test_pod_name',
                       'namespace_name' => 'test_namespace',
                       'container_name' => 'test_container',
-                      'host' => 'test_host'
+                      'host' => 'test_host',
+                      'labels' => {
+                          'guid' => 'test_owner',
+                      },
                     }
                   }]], '')
     end
@@ -54,7 +57,7 @@ RSpec.describe 'Loggregator Fluentd' do
         env.timestamp = (now.to_f * (10**9)).to_i
         env.source_id = 'test_owner'
         env.instance_id = '44'
-        env.tags['source_type'] = 'APP'
+        env.tags['source_type'] = 'APP/PROC/WEB'
         env.tags['namespace'] = 'test_namespace'
         env.tags['container'] = 'test_container'
         env.tags['cluster'] = 'test_host'
@@ -76,10 +79,55 @@ RSpec.describe 'Loggregator Fluentd' do
                         'pod_name' => 'test_pod_name-44',
                         'namespace_name' => 'test_namespace',
                         'container_name' => 'test_container',
-                        'host' => 'test_host'
+                        'host' => 'test_host',
+                        'labels' => {
+                            'guid' => 'test_owner',
+                        },
                       }
                     }]], '')
       end
+
+      context 'when it is a staging job'
+        it 'extracts the source_type of a staging job from the k8s labels' do
+          now = Time.now
+          expectedBatch = Loggregator::V2::EnvelopeBatch.new
+          env = Loggregator::V2::Envelope.new
+          log = Loggregator::V2::Log.new
+          log.type = :ERR
+          log.payload = 'test_payload'
+          env.log = log
+          env.timestamp = (now.to_f * (10**9)).to_i
+          env.instance_id = '44'
+          env.tags['source_type'] = 'STG'
+          env.tags['namespace'] = 'test_namespace'
+          env.tags['container'] = 'test_container'
+          env.tags['cluster'] = 'test_host'
+          env.tags['pod_name'] = 'test_pod_name-44'
+          expectedBatch.batch << env
+
+          output = Fluent::LoggregatorOutput.new
+
+          grpc = double('gRPC stub')
+          output.instance_variable_set(:@stub, grpc)
+          expect(grpc).to receive(:send).with(expectedBatch)
+
+          output.emit('tag', [[now, {
+              'log' => 'test_payload',
+              'stream' => 'stderr',
+              'kubernetes' => {
+                  'owner' => 'test_owner',
+                  'pod_id' => 'test-pod-id',
+                  'pod_name' => 'test_pod_name-44',
+                  'namespace_name' => 'test_namespace',
+                  'container_name' => 'test_container',
+                  'host' => 'test_host',
+                  'labels' => {
+                      'source_type' => 'STG',
+                  },
+              }
+          }]], '')
+      end
+
     end
 
   context 'SourceIDFilter' do
