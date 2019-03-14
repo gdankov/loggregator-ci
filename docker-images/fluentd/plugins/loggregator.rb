@@ -30,7 +30,7 @@ module Fluent
         env = Loggregator::V2::Envelope.new
         log = Loggregator::V2::Log.new
 
-        log.payload = record['log'].chop
+        log.payload = record['log'].strip
         log.type = :ERR if record['stream'] == 'stderr'
 
         env.log = log
