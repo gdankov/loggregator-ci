@@ -30,7 +30,7 @@ module Fluent
         env = Loggregator::V2::Envelope.new
         log = Loggregator::V2::Log.new
 
-        log.payload = record['log']
+        log.payload = record['log'].chop
         log.type = :ERR if record['stream'] == 'stderr'
 
         env.log = log
@@ -98,12 +98,16 @@ module Fluent
 
     def configure(_conf)
       @client = KubernetesClient.new
+      @namespace = conf['eirini_namespace']
       @cache = {}
     end
 
     def filter(_tag, _time, record)
       k8s = record.fetch('kubernetes')
-      return record unless k8s
+      return nil unless k8s
+
+      namespace = k8s.fetch('namespace_name', '')
+      return nil unless namespace == @namespace
 
       owner = cached_owner(
         k8s.fetch('namespace_name', ''),
